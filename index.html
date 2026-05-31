@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Ascension v3.3</title>
+    <style>
+        :root {
+            --aura-violet: #8b5cf6;
+            --aura-pink: #ec4899;
+            --aura-gold: #f59e0b;
+            --bg-color: #060214;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Стильный кастомный скроллбар для ПК */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 10, 35, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--aura-violet);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--aura-pink);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+            padding: 20px 10px;
+        }
+
+        /* Фоновые живые летающие туманности (только для ПК) */
+        .bg-orb {
+            position: fixed;
+            width: 45vw;
+            height: 45vw;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.18;
+            z-index: 0;
+            pointer-events: none;
+            animation: floatOrb 25s infinite alternate ease-in-out;
+        }
+        .orb-1 {
+            background: var(--aura-violet);
+            top: -10%;
+            left: -10%;
+        }
+        .orb-2 {
+            background: var(--aura-pink);
+            bottom: -10%;
+            right: -10%;
+            animation-delay: -10s;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(8%, 10%) scale(1.15); }
+        }
+
+        /* Мягкая виньетка поверх */
+        body::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(circle, transparent 40%, rgba(6, 2, 20, 0.7) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .game-wrapper {
+            display: flex;
+            gap: 25px;
+            max-width: 950px;
+            width: 100%;
+            z-index: 10;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: stretch; /* Панели на ПК будут одинаковой высоты */
+        }
+
+        .panel {
+            background: rgba(15, 10, 35, 0.65);
+            border: 2px solid rgba(139, 92, 246, 0.25);
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.1), inset 0 0 20px rgba(255, 255, 255, 0.01);
+            border-radius: 28px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            transition: border-color 0.5s, box-shadow 0.5s;
+        }
+
+        .panel:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.02);
+        }
+
+        /* Левая панель (Медитация) */
+        .main-panel {
+            flex: 1;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between; /* На ПК распределяет контент красиво */
+            gap: 20px;
+            text-align: center;
+        }
+
+        /* Правая панель (Магазин и Настройки) */
+        .shop-panel {
+            flex: 1.2;
+            min-width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            justify-content: space-between;
+        }
+
+        .header-container {
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            letter-spacing: 4px;
+            margin-bottom: 5px;
+            font-weight: 300;
+        }
+
+        /* БАЛАНС АУРЫ */
+        #score-display {
+            font-size: 3.5rem;
+            font-weight: 200;
+            color: #fff;
+            text-shadow: 0 0 20px var(--aura-pink), 0 0 40px rgba(139, 92, 246, 0.5);
+            margin: 5px 0;
+            line-height: 1.1;
+            transition: transform 0.1s;
+        }
+
+        .rank {
+            font-size: 0.8rem;
+            color: var(--aura-gold);
+            border: 1px solid var(--aura-gold);
+            padding: 4px 15px;
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+            display: inline-block;
+            margin-top: 5px;
+            letter-spacing: 1.5px;
+            background: rgba(245, 158, 11, 0.05);
+            text-transform: uppercase;
+        }
+
+        .cps-display {
+            color: #a78bfa;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        /* Настройки языка */
+        .settings-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.01);
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px dashed rgba(139, 92, 246, 0.15);
+            margin-bottom: 5px;
+        }
+
+        .lang-label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #8b5cf6;
+            letter-spacing: 1px;
+        }
+
+        .lang-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .lang-btn {
+            background: rgba(139, 92, 246, 0.05);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #c084fc;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: all 0.25s;
+            font-family: inherit;
+        }
+
+        .lang-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            color: #fff;
+            border-color: var(--aura-pink);
+        }
+
+        .lang-btn.active {
+            background: linear-gradient(135deg, var(--aura-violet), var(--aura-pink));
+            color: #fff;
+            box-shadow: 0 0 12px var(--aura-violet);
+            border-color: transparent;
+        }
+
+        /* КнопкаДзен/Медитация */
+        .click-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        #click-btn {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(6, 2, 20, 0.9) 100%);
+            cursor: pointer;
+            box-shadow: 
+                0 0 30px rgba(139, 92, 246, 0.25), 
+                inset 0 0 25px rgba(236, 72, 153, 0.15);
+            transition: transform 0.2s, box-shadow 0.3s, border-color 0.3s;
+            position: relative;
+            outline: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Эффект наведения мышки на ПК */
+        #click-btn:hover {
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow: 
+                0 0 40px rgba(139, 92, 246, 0.4), 
+                0 0 10px rgba(236, 72, 153, 0.2), 
+                inset 0 0 25px rgba(236, 72, 153, 0.25);
+        }
+
+        #click-btn:active {
+            transform: scale(0.96);
+            box-shadow: 
+                0 0 15px rgba(139, 92, 246, 0.2), 
+                inset 0 0 10px rgba(236, 72, 153, 0.1);
+        }
+
+        #click-btn::after {
+            content: "ZEN";
+            font-weight: 300;
+            font-size: 1.4rem;
+            letter-spacing: 5px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        /* Апгрейды */
+        .shop-title {
+            color: var(--aura-gold);
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+            padding-bottom: 5px;
+            margin-top: 5px;
+            text-align: left;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .upgrades-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-grow: 1;
+            margin-top: 5px;
+        }
+
+        .upgrade-card {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(139, 92, 246, 0.12);
+            padding: 14px 15px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        /* Интерактивный ховер для ПК */
+        .upgrade-card:hover:not(.disabled) {
+            background: rgba(139, 92, 246, 0.06);
+            border-color: var(--aura-pink);
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .upgrade-card.disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            border-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .upgrade-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: left;
+        }
+
+        .up-name {
+            font-weight: 400;
+            color: #fff;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+
+        .up-desc {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .up-cost {
+            font-weight: bold;
+            color: var(--aura-gold);
+            text-shadow: 0 0 5px rgba(245, 158, 11, 0.2);
+            font-size: 0.95rem;
+        }
+
+        /* Вспомогательные кнопки */
+        .controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .control-btn {
+            flex: 1;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #64748b;
+            padding: 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s;
+            font-family: inherit;
+            letter-spacing: 1px;
+        }
+
+        .control-btn:hover {
+            border-color: var(--aura-violet);
+            color: #fff;
+            background: rgba(139, 92, 246, 0.04);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.1);
+        }
+
+        /* Спецэффекты */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Светящаяся Духовная Аномалия */
+        .anomaly {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle, #fff 0%, var(--aura-gold) 40%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 30px var(--aura-gold), 0 0 50px var(--aura-pink);
+            cursor: pointer;
+            z-index: 100;
+            animation: breathe 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes breathe {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(1.2); opacity: 1; filter: hue-rotate(45deg); }
+        }
+
+        /* АДАПТИВ (ДЛЯ МОБИЛОК И ПЛАНШЕТОВ) */
+        @media (max-width: 768px) {
+            body {
+                align-items: flex-start;
+                padding-top: 15px;
+            }
+            .bg-orb {
+                width: 70vw;
+                height: 70vw; /* На мобилке шары меньше и аккуратнее */
+            }
+            .game-wrapper {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .panel {
+                padding: 20px;
+                border-radius: 22px;
+            }
+            #score-display {
+                font-size: 2.7rem;
+            }
+            #click-btn {
+                width: 150px;
+                height: 150px;
+            }
+            #click-btn:hover {
+                transform: none; /* Убираем ховер-эффект на сенсорных экранах */
+            }
+            h1 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ФОНОВЫЕ СФЕРЫ ДЛЯ ПК -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="game-wrapper">
+        <!-- ЛЕВАЯ ПАНЕЛЬ (МЕДИТАЦИЯ) -->
+        <div class="panel main-panel">
+            <div class="header-container">
+                <h1 id="game-title">AURA ASCENSION</h1>
+                <!-- БАЛАНС -->
+                <div id="score-display">0</div>
+                <div class="rank" id="rank-display">RANK: SEEKER</div>
+            </div>
+
+            <div class="click-container">
+                <div class="cps-display">
+                    <span id="lbl-cps-prefix">Sec. flow: +</span><span id="cps-val">0</span> AP
+                </div>
+                
+                <button id="click-btn"></button>
+                
+                <div style="font-size: 0.8rem; color: #475569; margin-top: 15px; letter-spacing: 1px;">
+                    <span id="lbl-cpc-prefix">Focus brings: +</span><span id="cpc-val">1</span> AP
+                </div>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ ПАНЕЛЬ (МАГАЗИН И НАСТРОЙКИ) -->
+        <div class="panel shop-panel">
+            
+            <!-- Выбор языков -->
+            <div class="settings-bar">
+                <span class="lang-label" id="lbl-lang">SPIRIT LANG:</span>
+                <div class="lang-group">
+                    <button class="lang-btn" data-lang="ru">RU</button>
+                    <button class="lang-btn" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="de">DE</button>
+                    <button class="lang-btn" data-lang="zh">ZH</button>
+                </div>
+            </div>
+
+            <div class="shop-title" id="lbl-shop-title">SPIRIT PATHWAYS (SHOP)</div>
+            
+            <div class="upgrades-list">
+                <!-- Апгрейд 1 -->
+                <div class="upgrade-card" id="up-click">
+                    <div class="upgrade-info">
+                        <span class="up-name" id="lbl-up-click-name">Third Eye</span>
+                        <span class="up-desc" id="lbl-up-click-desc">Focus power +1</span>
+                    </div>
+                    <span class="up-cost" id="cost-click">15 AP</span>
+                </div>
+
+                <!-- Апгрейд 2 -->
+                <div class="upgrade-card" id="up-cpu">
+                    <div class="upgrade-info">
+                        <span class="up-name" id="lbl-up-cpu-name">Crystal Garden</span>
+                        <span class="up-desc" id="lbl-up-cpu-desc">Passive energy +1/sec</span>
+                    </div>
+                    <span class="up-cost" id="cost-cpu">100 AP</span>
+                </div>
+
+                <!-- Апгрейд 3 -->
+                <div class="upgrade-card" id="up-server">
+                    <div class="upgrade-info">
+                        <span class="up-name" id="lbl-up-server-name">Astral Temple</span>
+                        <span class="up-desc" id="lbl-up-server-desc">Passive energy +10/sec</span>
+                    </div>
+                    <span class="up-cost" id="cost-server">800 AP</span>
+                </div>
+
+                <!-- Апгрейд 4 -->
+                <div class="upgrade-card" id="up-ai">
+                    <div class="upgrade-info">
+                        <span class="up-name" id="lbl-up-ai-name">Cosmic Oversoul</span>
+                        <span class="up-desc" id="lbl-up-ai-desc">Passive energy +100/sec</span>
+                    </div>
+                    <span class="up-cost" id="cost-ai">5000 AP</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn" id="save-btn">SAVE SOUL</button>
+                <button class="control-btn" id="reset-btn" style="color: var(--aura-pink)">KARMIC RESET</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Локализации
+        const locales = {
+            ru: {
+                title: "ВОЗНЕСЕНИЕ АУРЫ",
+                rank_prefix: "РАНГ: ",
+                sec_income: "Поток энергии: +",
+                click_brings: "Медитация приносит: +",
+                shop_title: "ДУХОВНЫЙ ПУТЬ (МАГАЗИН)",
+                backup_btn: "СОХРАНИТЬ ДУШУ",
+                reset_btn: "ОЧИСТИТЬ КАРМУ",
+                lang_label: "ЯЗЫК ДУХА:",
+                glitch_bonus: "ВСПЫШКА АУРЫ!",
+                save_msg: "Ваш духовный прогресс запечатлен в вечности!",
+                reset_confirm: "Вы уверены, что хотите очистить свою карму и начать сначала? Это обнулит ваш земной путь!",
+                up_click_name: "Третий Глаз",
+                up_click_desc: "Сила медитации +1",
+                up_cpu_name: "Кристальный Сад",
+                up_cpu_desc: "Пассивная аура +1/сек",
+                up_server_name: "Астральный Храм",
+                up_server_desc: "Пассивная аура +10/сек",
+                up_ai_name: "Космический Разум",
+                up_ai_desc: "Пассивная аура +100/сек",
+                ranks: ["ИСКАТЕЛЬ", "ПРОБУЖДЕННЫЙ", "МУДРЕЦ", "ВОЗНЕСЕННЫЙ", "КОСМИЧЕСКОЕ БОЖЕСТВО"]
+            },
+            en: {
+                title: "AURA ASCENSION",
+                rank_prefix: "RANK: ",
+                sec_income: "Sec. flow: +",
+                click_brings: "Focus brings: +",
+                shop_title: "SPIRIT PATHWAYS (SHOP)",
+                backup_btn: "SAVE SOUL",
+                reset_btn: "KARMIC RESET",
+                lang_label: "SPIRIT LANG:",
+                glitch_bonus: "AURA FLARE!",
+                save_msg: "Your spiritual progress is etched in eternity!",
+                reset_confirm: "Are you sure you want to reset your karma? This will restart your earthly journey!",
+                up_click_name: "Third Eye",
+                up_click_desc: "Focus power +1",
+                up_cpu_name: "Crystal Garden",
+                up_cpu_desc: "Passive energy +1/sec",
+                up_server_name: "Astral Temple",
+                up_server_desc: "Passive energy +10/sec",
+                up_ai_name: "Cosmic Oversoul",
+                up_ai_desc: "Passive energy +100/sec",
+                ranks: ["SEEKER", "AWAKENED", "SAGE", "ASCENDED", "COSMIC ENTITY"]
+            },
+            de: {
+                title: "AURA-AUFSTIEG",
+                rank_prefix: "RANG: ",
+                sec_income: "Fluss: +",
+                click_brings: "Meditation bringt: +",
+                shop_title: "GEISTIGE PFADE (LADEN)",
+                backup_btn: "SEELE SPEICHERN",
+                reset_btn: "KARMISCHES RESET",
+                lang_label: "SPRACHE:",
+                glitch_bonus: "AURA-FLARE!",
+                save_msg: "Dein spiritueller Fortschritt ist in der Ewigkeit verankert!",
+                reset_confirm: "Bist du sicher, dass du dein Karma zurücksetzen möchtest? Dies startet deine Reise neu!",
+                up_click_name: "Drittes Auge",
+                up_click_desc: "Meditationskraft +1",
+                up_cpu_name: "Kristallgarten",
+                up_cpu_desc: "Passive Energie +1/Sek",
+                up_server_name: "Astraltempel",
+                up_server_desc: "Passive Energie +10/Sek",
+                up_ai_name: "Kosmischer Geist",
+                up_ai_desc: "Passive Energie +100/Sek",
+                ranks: ["SUCHENDER", "ERWACHTER", "WEISER", "AUFGESTEGENER", "KOSMISCHES WESEN"]
+            },
+            zh: {
+                title: "灵气飞升",
+                rank_prefix: "境界: ",
+                sec_income: "秒收益: +",
+                click_brings: "冥想收益: +",
+                shop_title: "修行之路 (商店)",
+                backup_btn: "保存灵魂",
+                reset_btn: "因果重置",
+                lang_label: "灵性语言:",
+                glitch_bonus: "灵气爆发！",
+                save_msg: "你的修行进度已被印刻在永恒之中！",
+                reset_confirm: "您确定要重置因果吗？这将重置您的红尘之旅！",
+                up_click_name: "天眼",
+                up_click_desc: "每次修行 +1",
+                up_cpu_name: "水晶花园",
+                up_cpu_desc: "被动吸纳 +1/秒",
+                up_server_name: "星光神殿",
+                up_server_desc: "被动吸纳 +10/秒",
+                up_ai_name: "宇宙超灵",
+                up_ai_desc: "被动吸纳 +100/秒",
+                ranks: ["凡人", "觉醒者", "修行者", "飞升者", "宇宙神明"]
+            }
+        };
+
+        // Данные игры
+        let state = {
+            score: 0,
+            cpc: 1, 
+            cps: 0, 
+            lang: 'ru', 
+            costs: {
+                click: 15,
+                cpu: 100,
+                server: 800,
+                ai: 5000
+            }
+        };
+
+        // Загрузка
+        if (localStorage.getItem('aura_ascension_save_v3')) {
+            const saved = JSON.parse(localStorage.getItem('aura_ascension_save_v3'));
+            state = { ...state, ...saved }; 
+        }
+
+        // Web Audio API — Синтезатор Дзен
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playChime(freq, duration) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        const scoreEl = document.getElementById('score-display');
+        const cpsEl = document.getElementById('cps-val');
+        const cpcEl = document.getElementById('cpc-val');
+        const rankEl = document.getElementById('rank-display');
+        
+        const btnClick = document.getElementById('click-btn');
+        const cardClick = document.getElementById('up-click');
+        const cardCpu = document.getElementById('up-cpu');
+        const cardServer = document.getElementById('up-server');
+        const cardAi = document.getElementById('up-ai');
+
+        function applyLocalization() {
+            const currentLoc = locales[state.lang];
+
+            document.getElementById('game-title').textContent = currentLoc.title;
+            document.getElementById('lbl-cps-prefix').textContent = currentLoc.sec_income;
+            document.getElementById('lbl-cpc-prefix').textContent = currentLoc.click_brings;
+            document.getElementById('lbl-lang').textContent = currentLoc.lang_label;
+            document.getElementById('lbl-shop-title').textContent = currentLoc.shop_title;
+
+            document.getElementById('lbl-up-click-name').textContent = currentLoc.up_click_name;
+            document.getElementById('lbl-up-click-desc').textContent = currentLoc.up_click_desc;
+
+            document.getElementById('lbl-up-cpu-name').textContent = currentLoc.up_cpu_name;
+            document.getElementById('lbl-up-cpu-desc').textContent = currentLoc.up_cpu_desc;
+
+            document.getElementById('lbl-up-server-name').textContent = currentLoc.up_server_name;
+            document.getElementById('lbl-up-server-desc').textContent = currentLoc.up_server_desc;
+
+            document.getElementById('lbl-up-ai-name').textContent = currentLoc.up_ai_name;
+            document.getElementById('lbl-up-ai-desc').textContent = currentLoc.up_ai_desc;
+
+            document.getElementById('save-btn').textContent = currentLoc.backup_btn;
+            document.getElementById('reset-btn').textContent = currentLoc.reset_btn;
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.dataset.lang === state.lang) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        const rankLimits = [0, 200, 1000, 10000, 100000];
+        
+        function updateRank() {
+            let rankIndex = 0;
+            for (let i = 0; i < rankLimits.length; i++) {
+                if (state.score >= rankLimits[i]) {
+                    rankIndex = i;
+                }
+            }
+            const currentLoc = locales[state.lang];
+            rankEl.textContent = `${currentLoc.rank_prefix}${currentLoc.ranks[rankIndex]}`;
+        }
+
+        function updateUI() {
+            scoreEl.textContent = Math.floor(state.score);
+            cpsEl.textContent = state.cps;
+            cpcEl.textContent = state.cpc;
+
+            document.getElementById('cost-click').textContent = state.costs.click + ' AP';
+            document.getElementById('cost-cpu').textContent = state.costs.cpu + ' AP';
+            document.getElementById('cost-server').textContent = state.costs.server + ' AP';
+            document.getElementById('cost-ai').textContent = state.costs.ai + ' AP';
+
+            toggleCard(cardClick, state.score < state.costs.click);
+            toggleCard(cardCpu, state.score < state.costs.cpu);
+            toggleCard(cardServer, state.score < state.costs.server);
+            toggleCard(cardAi, state.score < state.costs.ai);
+
+            updateRank();
+        }
+
+        function toggleCard(element, isDisabled) {
+            if (isDisabled) {
+                element.classList.add('disabled');
+            } else {
+                element.classList.remove('disabled');
+            }
+        }
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.lang = btn.dataset.lang;
+                playChime(659.25, 0.4); 
+                applyLocalization();
+                updateUI();
+                saveGame();
+            });
+        });
+
+        // КЛИК (Эффект легкой пульсации баланса при клике на ПК)
+        btnClick.addEventListener('click', (e) => {
+            state.score += state.cpc;
+            playChime(523.25, 0.8); 
+            createParticles(e.clientX, e.clientY);
+            createFloatingText(e.clientX, e.clientY, `+${state.cpc}`);
+            
+            // Микро-анимация увеличения баланса
+            scoreEl.style.transform = 'scale(1.05)';
+            setTimeout(() => scoreEl.style.transform = 'scale(1)', 80);
+
+            updateUI();
+            saveGame();
+        });
+
+        cardClick.addEventListener('click', () => {
+            if (state.score >= state.costs.click) {
+                state.score -= state.costs.click;
+                state.cpc += 1;
+                state.costs.click = Math.round(state.costs.click * 1.5);
+                playChime(659.25, 0.6); 
+                updateUI();
+            } else { playChime(220, 0.3); }
+        });
+
+        cardCpu.addEventListener('click', () => {
+            if (state.score >= state.costs.cpu) {
+                state.score -= state.costs.cpu;
+                state.cps += 1;
+                state.costs.cpu = Math.round(state.costs.cpu * 1.6);
+                playChime(783.99, 0.7); 
+                updateUI();
+            } else { playChime(220, 0.3); }
+        });
+
+        cardServer.addEventListener('click', () => {
+            if (state.score >= state.costs.server) {
+                state.score -= state.costs.server;
+                state.cps += 10;
+                state.costs.server = Math.round(state.costs.server * 1.7);
+                playChime(987.77, 0.8); 
+                updateUI();
+            } else { playChime(220, 0.3); }
+        });
+
+        cardAi.addEventListener('click', () => {
+            if (state.score >= state.costs.ai) {
+                state.score -= state.costs.ai;
+                state.cps += 100;
+                state.costs.ai = Math.round(state.costs.ai * 1.8);
+                playChime(1046.50, 1.2); 
+                updateUI();
+            } else { playChime(220, 0.3); }
+        });
+
+        setInterval(() => {
+            if (state.cps > 0) {
+                state.score += state.cps / 10; 
+                updateUI();
+            }
+        }, 100);
+
+        function saveGame() {
+            localStorage.setItem('aura_ascension_save_v3', JSON.stringify(state));
+        }
+        setInterval(saveGame, 10000);
+
+        document.getElementById('save-btn').addEventListener('click', () => {
+            saveGame();
+            playChime(440, 0.8);
+            alert(locales[state.lang].save_msg);
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            if (confirm(locales[state.lang].reset_confirm)) {
+                localStorage.removeItem('aura_ascension_save_v3');
+                location.reload();
+            }
+        });
+
+
+        // === ДУХОВНЫЕ ЧАСТИЦЫ ===
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 5 + 2;
+                this.speedX = (Math.random() - 0.5) * 4;
+                this.speedY = (Math.random() - 0.5) * 4 - 2; 
+                this.color = Math.random() > 0.5 ? '#8b5cf6' : '#ec4899';
+                this.alpha = 1;
+                this.decay = Math.random() * 0.01 + 0.01;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.alpha -= this.decay;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].alpha <= 0) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+
+        // === ВСПЛЫВАЮЩИЙ ТЕКСТ ===
+        function createFloatingText(x, y, text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            div.style.position = 'absolute';
+            div.style.left = `${x}px`;
+            div.style.top = `${y + window.scrollY}px`;
+            div.style.color = '#fff';
+            div.style.fontSize = '1.3rem';
+            div.style.fontWeight = '300';
+            div.style.textShadow = '0 0 10px rgba(139, 92, 246, 0.8)';
+            div.style.pointerEvents = 'none';
+            div.style.transform = 'translate(-50%, -50%)';
+            div.style.zIndex = '1000';
+            div.style.letterSpacing = '1px';
+            document.body.appendChild(div);
+
+            let opacity = 1;
+            let currentY = y + window.scrollY;
+
+            const floatInterval = setInterval(() => {
+                opacity -= 0.04;
+                currentY -= 1.5;
+                div.style.opacity = opacity;
+                div.style.top = `${currentY}px`;
+
+                if (opacity <= 0) {
+                    clearInterval(floatInterval);
+                    div.remove();
+                }
+            }, 30);
+        }
+
+
+        // === ВСПЫШКА АУРЫ ===
+        function spawnAnomaly() {
+            const x = Math.random() * (window.innerWidth - 80) + 40;
+            const y = Math.random() * (window.innerHeight - 80) + 40 + window.scrollY;
+
+            const anomaly = document.createElement('div');
+            anomaly.classList.add('anomaly');
+            anomaly.style.left = `${x}px`;
+            anomaly.style.top = `${y}px`;
+            document.body.appendChild(anomaly);
+
+            const bonus = (state.cps * 15) + (state.cpc * 10) + 50;
+
+            anomaly.addEventListener('click', (e) => {
+                state.score += bonus;
+                playChime(1200, 1.5); 
+                createParticles(e.clientX, e.clientY);
+                
+                const currentLoc = locales[state.lang];
+                createFloatingText(e.clientX, e.clientY, `+${bonus} ${currentLoc.glitch_bonus}`);
+                
+                updateUI();
+                anomaly.remove();
+            });
+
+            setTimeout(() => {
+                if (anomaly.parentNode) {
+                    anomaly.remove();
+                }
+            }, 7000);
+        }
+
+        setInterval(() => {
+            if (Math.random() > 0.4) {
+                spawnAnomaly();
+            }
+        }, 22000);
+
+        applyLocalization();
+        updateUI();
+    </script>
+</body>
+</html>
